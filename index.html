@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>AI Explorers HQ</title>
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--ink:#1d1b18;--mut:#6b665e;--line:#e4e0d8;--acc:#4f46e5;--chip:#efece6}
+@media (prefers-color-scheme:dark){:root{--bg:#141311;--card:#1d1c19;--ink:#ece8e1;--mut:#9a948a;--line:#2e2c28;--acc:#8b85ff;--chip:#26241f}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--card);flex-wrap:wrap}
+header b{font-size:15px;margin-right:6px}button{font:inherit;border:0;background:none;color:var(--mut);padding:6px 12px;border-radius:8px;cursor:pointer}
+button.on{background:var(--chip);color:var(--ink);font-weight:600}a.ext{margin-left:auto;color:var(--acc);font-size:13px}
+iframe{flex:1;width:100%;border:0;display:none;background:var(--bg)}iframe.on{display:block}
+.msg{margin:auto;max-width:440px;padding:24px;text-align:center;color:var(--mut)}
+</style></head><body>
+<header><b>📕 AI Explorers HQ</b><button id="tOps" class="on" onclick="show('ops')">Admin panel</button><button id="tChat" onclick="show('chat')">Chat with Claude</button><a class="ext" id="ext" target="_blank" rel="noopener">open in new tab ↗</a></header>
+<div class="msg" id="msg">Connecting…</div>
+<iframe id="ops" allow="clipboard-write"></iframe><iframe id="chat" allow="clipboard-write; clipboard-read"></iframe>
+<script>
+// Keys live only in the URL fragment (#ops=…&chat=…), which browsers never send to any server.
+const F = new URLSearchParams(location.hash.slice(1));
+// Not stored anywhere: every shivampal46011.github.io page shares one origin. Bookmark the full link instead.
+const keys = { ops: F.get("ops") || "", chat: F.get("chat") || "" };
+let cur = "ops", src = {};
+function show(w) {
+  cur = w;
+  for (const x of ["ops", "chat"]) document.getElementById(x).classList.toggle("on", x === w);
+  document.getElementById("tOps").classList.toggle("on", w === "ops");
+  document.getElementById("tChat").classList.toggle("on", w === "chat");
+  document.getElementById("ext").href = src[w] || "#";
+}
+(async () => {
+  const msg = document.getElementById("msg");
+  if (!keys.ops || !keys.chat) { msg.textContent = "This link is missing its keys. Use the full HQ link Claude gave you."; return; }
+  try {
+    // GitHub API (not Pages) so a fresh tunnel URL shows up immediately after the Mac restarts it
+    const r = await fetch("https://api.github.com/repos/shivampal46011/ae-hq/contents/config.json", { cache: "no-store" });
+    const c = JSON.parse(atob((await r.json()).content.replace(/\n/g, "")));
+    src.ops = `${c.ops}/?k=${encodeURIComponent(keys.ops)}#overview`;
+    src.chat = `${c.chat}/?t=${encodeURIComponent(keys.chat)}`;
+    document.getElementById("ops").src = src.ops;
+    document.getElementById("chat").src = src.chat;
+    msg.remove(); show(cur);
+  } catch (e) { msg.textContent = "The Mac isn't reachable right now (asleep, offline, or the tunnel is restarting). Try again in a minute."; }
+})();
+</script></body></html>
